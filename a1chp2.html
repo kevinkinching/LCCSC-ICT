@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="zh-HK" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>數據有效性檢驗與用戶界面設計 - 互動練習</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- html2pdf.js for clean HTML-to-PDF rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        body {
+            font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f8fafc;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 4px;
+        }
+        /* Prevent font size zoom on iOS inputs */
+        @media screen and (max-width: 768px) {
+            input, select, textarea {
+                font-size: 16px !important;
+            }
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-full flex flex-col justify-between bg-slate-50 antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- Mobile-optimized Top Navbar -->
+    <header class="bg-indigo-700/95 backdrop-blur-md text-white shadow-md sticky top-0 z-30 transition-all">
+        <div class="max-w-4xl mx-auto px-3 py-2.5 sm:px-4 sm:py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2.5">
+                <div class="bg-white/20 p-2 rounded-xl backdrop-blur-sm shrink-0">
+                    <i class="fa-solid fa-shield-halved text-xl sm:text-2xl text-yellow-300"></i>
+                </div>
+                <div>
+                    <h1 class="font-black text-base sm:text-lg leading-tight tracking-tight">數據有效性與 UI 設計</h1>
+                    <p class="text-[11px] sm:text-xs text-indigo-200">ICT 資訊及通訊科技 - 微學習</p>
+                </div>
+            </div>
+            
+            <div id="userInfoHeader" class="hidden flex items-center space-x-1.5 bg-indigo-800/80 px-2.5 py-1 rounded-full text-xs border border-indigo-400/30 shrink-0">
+                <i class="fa-solid fa-user-graduate text-yellow-300 text-xs"></i>
+                <span id="headerStudentText" class="font-medium truncate max-w-[110px] sm:max-w-none"></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container with responsive padding -->
+    <main class="max-w-4xl mx-auto px-3 py-4 sm:px-4 sm:py-6 flex-grow w-full pb-20 sm:pb-6">
+
+        <!-- SCREEN 1: LOGIN / WELCOME SCREEN -->
+        <section id="screenLogin" class="bg-white rounded-3xl shadow-lg p-5 sm:p-8 border border-slate-100 max-w-xl mx-auto my-auto">
+            <div class="text-center mb-6">
+                <div class="w-14 h-14 sm:w-16 sm:h-16 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl sm:text-3xl shadow-inner">
+                    <i class="fa-solid fa-laptop-code"></i>
+                </div>
+                <h2 class="text-xl sm:text-2xl font-black text-slate-800 mb-1.5">數據有效性與 UI 練習館</h2>
+                <p class="text-slate-500 text-xs sm:text-sm leading-relaxed">互動式預習/溫習工具。完成後即可下載附帶個人班別學號的官方 PDF 成績報告。</p>
+            </div>
+
+            <form id="studentForm" onsubmit="handleStartApp(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">班別 (Class) <span class="text-red-500">*</span></label>
+                        <input type="text" id="inputClass" required placeholder="如 4A, 5B" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-base sm:text-sm font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">學號 (Class No.) <span class="text-red-500">*</span></label>
+                        <input type="text" id="inputId" required placeholder="如 05, 23" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-base sm:text-sm font-medium">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">學生姓名 (Student Name) <span class="text-red-500">*</span></label>
+                    <input type="text" id="inputName" required placeholder="如 陳大文" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-base sm:text-sm font-medium">
+                </div>
+
+                <div class="pt-2 flex flex-col gap-2.5">
+                    <button type="submit" class="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold rounded-2xl shadow-md transition flex items-center justify-center space-x-2 text-sm sm:text-base">
+                        <i class="fa-solid fa-gamepad"></i>
+                        <span>直接開始互動闖關</span>
+                    </button>
+                    <button type="button" onclick="handleStartStudyMode(event)" class="w-full py-3 px-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 active:scale-[0.98] font-bold rounded-2xl border border-emerald-200 transition flex items-center justify-center space-x-2 text-sm">
+                        <i class="fa-solid fa-book-open"></i>
+                        <span>先看概念卡溫習</span>
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- SCREEN 2: QUICK CONCEPT REVIEW (溫習館) -->
+        <section id="screenReview" class="hidden space-y-4">
+            <div class="bg-gradient-to-r from-indigo-900 to-indigo-800 text-white rounded-2xl p-4 shadow-md flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div>
+                    <h2 class="text-lg font-bold flex items-center gap-2">
+                        <i class="fa-solid fa-graduation-cap text-yellow-400"></i>
+                        核心概念溫習館
+                    </h2>
+                    <p class="text-indigo-200 text-xs mt-0.5">重溫 8 種數據有效性檢驗與 4 種 UI 控制項</p>
+                </div>
+                <button onclick="switchScreen('quiz')" class="w-full sm:w-auto py-2.5 px-4 bg-yellow-400 hover:bg-yellow-300 text-indigo-950 font-bold rounded-xl shadow transition text-xs flex items-center justify-center space-x-2 active:scale-95">
+                    <span>開始挑戰練習</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <!-- TAB CONTROLS FOR MOBILE -->
+            <div class="flex border-b border-slate-200 bg-white rounded-xl overflow-hidden shadow-sm p-1 gap-1">
+                <button id="tabBtn1" onclick="switchReviewTab('table23')" class="flex-1 py-2.5 px-2 text-center font-bold text-xs rounded-lg transition bg-indigo-600 text-white shadow-sm">
+                    表 2.3 數據有效性 (8大類)
+                </button>
+                <button id="tabBtn2" onclick="switchReviewTab('table24')" class="flex-1 py-2.5 px-2 text-center font-bold text-xs rounded-lg transition text-slate-600 hover:bg-slate-100">
+                    表 2.4 UI 設計元件
+                </button>
+            </div>
+
+            <!-- TAB 1 CONTENT: Data Validation Methods -->
+            <div id="tabContent1" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <!-- Validation Cards -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center space-x-2.5 mb-1.5">
+                        <span class="w-7 h-7 bg-blue-100 text-blue-700 rounded-lg flex items-center justify-center font-black text-xs">1</span>
+                        <h3 class="font-bold text-slate-800 text-sm">完整性檢查 (Completeness Check)</h3>
+                    </div>
+                    <p class="text-xs text-slate-600 mb-2">確保必填欄位中有數據，不能留空。</p>
+                    <div class="text-[11px] bg-amber-50 text-amber-900 p-2 rounded-lg border border-amber-200">
+                        <i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i><strong>例子：</strong>申請人必須提供姓名。
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center space-x-2.5 mb-1.5">
+                        <span class="w-7 h-7 bg-indigo-100 text-indigo-700 rounded-lg flex items-center justify-center font-black text-xs">2</span>
+                        <h3 class="font-bold text-slate-800 text-sm">固定值檢查 (Fixed Value Check)</h3>
+                    </div>
+                    <p class="text-xs text-slate-600 mb-2">確保數據只能來自一系列特定的已知選項。</p>
+                    <div class="text-[11px] bg-amber-50 text-amber-900 p-2 rounded-lg border border-amber-200">
+                        <i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i><strong>例子：</strong>性別必須為「M」或「F」。
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center space-x-2.5 mb-1.5">
+                        <span class="w-7 h-7 bg-purple-100 text-purple-700 rounded-lg flex items-center justify-center font-black text-xs">3</span>
+                        <h3 class="font-bold text-slate-800 text-sm">類型檢查 (Type Check)</h3>
+                    </div>
+                    <p class="text-xs text-slate-600 mb-2">確保數據必須為指定資料型別（如數字、日期）。</p>
+                    <div class="text-[11px] bg-amber-50 text-amber-900 p-2 rounded-lg border border-amber-200">
+                        <i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i><strong>例子：</strong>年齡必須是數字，不能填寫文字。
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center space-x-2.5 mb-1.5">
+                        <span class="w-7 h-7 bg-emerald-100 text-emerald-700 rounded-lg flex items-center justify-center font-black text-xs">4</span>
+                        <h3 class="font-bold text-slate-800 text-sm">範圍檢查 (Range Check)</h3>
+                    </div>
+                    <p class="text-xs text-slate-600 mb-2">確保數據必須位於指定邊界範圍內。</p>
+                    <div class="text-[11px] bg-amber-50 text-amber-900 p-2 rounded-lg border border-amber-200">
+                        <i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i><strong>例子：</strong>年齡必須大於 12 歲。
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center space-x-2.5 mb-1.5">
+                        <span class="w-7 h-7 bg-pink-100 text-pink-700 rounded-lg flex items-center justify-center font-black text-xs">5</span>
+                        <h3 class="font-bold text-slate-800 text-sm">長度檢查 (Length Check)</h3>
+                    </div>
+                    <p class="text-xs text-slate-600 mb-2">確保數據的字符數/位數符合指定規範。</p>
+                    <div class="text-[11px] bg-amber-50 text-amber-900 p-2 rounded-lg border border-amber-200">
+                        <i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i><strong>例子：</strong>香港電話號碼必須為 8 個位。
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center space-x-2.5 mb-1.5">
+                        <span class="w-7 h-7 bg-cyan-100 text-cyan-700 rounded-lg flex items-center justify-center font-black text-xs">6</span>
+                        <h3 class="font-bold text-slate-800 text-sm">格式檢查 (Format Check)</h3>
+                    </div>
+                    <p class="text-xs text-slate-600 mb-2">確保數據符合特定格式模式。</p>
+                    <div class="text-[11px] bg-amber-50 text-amber-900 p-2 rounded-lg border border-amber-200">
+                        <i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i><strong>例子：</strong>電郵地址必須含有「@」符號。
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center space-x-2.5 mb-1.5">
+                        <span class="w-7 h-7 bg-orange-100 text-orange-700 rounded-lg flex items-center justify-center font-black text-xs">7</span>
+                        <h3 class="font-bold text-slate-800 text-sm">一致性檢查 (Consistency Check)</h3>
+                    </div>
+                    <p class="text-xs text-slate-600 mb-2">比較多個欄位，確保邏輯相互吻合無矛盾。</p>
+                    <div class="text-[11px] bg-amber-50 text-amber-900 p-2 rounded-lg border border-amber-200">
+                        <i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i><strong>例子：</strong>結束日期必須在開始日期之後。
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center space-x-2.5 mb-1.5">
+                        <span class="w-7 h-7 bg-red-100 text-red-700 rounded-lg flex items-center justify-center font-black text-xs">8</span>
+                        <h3 class="font-bold text-slate-800 text-sm">唯一性檢查 (Uniqueness Check)</h3>
+                    </div>
+                    <p class="text-xs text-slate-600 mb-2">確保欄位數據在資料庫中獨一無二不重複。</p>
+                    <div class="text-[11px] bg-amber-50 text-amber-900 p-2 rounded-lg border border-amber-200">
+                        <i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i><strong>例子：</strong>每人限申一次，學生 ID 不得重複。
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2 CONTENT: UI Element Design -->
+            <div id="tabContent2" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-start mb-1.5">
+                        <h3 class="font-bold text-indigo-700 text-sm"><i class="fa-solid fa-caret-down mr-1"></i> 下拉式選單 (Dropdown)</h3>
+                        <span class="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-md text-[10px] font-bold">固定值檢查</span>
+                    </div>
+                    <p class="text-xs text-slate-600 mb-2">只可輸入/選取其中一個特定值。</p>
+                    <div class="bg-slate-50 p-2.5 rounded-xl border">
+                        <label class="text-[11px] text-slate-500 block mb-1">互動測試：</label>
+                        <select class="text-xs w-full p-2 border rounded-lg bg-white outline-none">
+                            <option>性別: M</option>
+                            <option>性別: F</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-start mb-1.5">
+                        <h3 class="font-bold text-indigo-700 text-sm"><i class="fa-regular fa-circle-dot mr-1"></i> 單選按鈕 (Radio Button)</h3>
+                        <span class="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-md text-[10px] font-bold">固定值檢查</span>
+                    </div>
+                    <p class="text-xs text-slate-600 mb-2">單選選項，確保值只能取其一。</p>
+                    <div class="bg-slate-50 p-2.5 rounded-xl border text-xs space-y-1.5">
+                        <span class="text-[11px] text-slate-500 block">欲參與活動：</span>
+                        <div class="flex flex-wrap gap-2">
+                            <label class="bg-white px-2.5 py-1 rounded border text-[11px] flex items-center"><input type="radio" name="r1" checked class="mr-1"> 海灘清理</label>
+                            <label class="bg-white px-2.5 py-1 rounded border text-[11px] flex items-center"><input type="radio" name="r1" class="mr-1"> 半日植樹</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-start mb-1.5">
+                        <h3 class="font-bold text-indigo-700 text-sm"><i class="fa-regular fa-square-check mr-1"></i> 複選框 (Checkbox)</h3>
+                        <span class="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-md text-[10px] font-bold">固定值檢查</span>
+                    </div>
+                    <p class="text-xs text-slate-600 mb-2">可同時勾選一個或多個特定值。</p>
+                    <div class="bg-slate-50 p-2.5 rounded-xl border text-xs space-y-1.5">
+                        <span class="text-[11px] text-slate-500 block">欲參與活動（可多選）：</span>
+                        <div class="flex flex-wrap gap-2">
+                            <label class="bg-white px-2 py-1 rounded border text-[11px] flex items-center"><input type="checkbox" checked class="mr-1"> 海灘清理</label>
+                            <label class="bg-white px-2 py-1 rounded border text-[11px] flex items-center"><input type="checkbox" checked class="mr-1"> 義教服務</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-start mb-1.5">
+                        <h3 class="font-bold text-indigo-700 text-sm"><i class="fa-regular fa-calendar-days mr-1"></i> 日期選擇器 (Date Picker)</h3>
+                        <span class="px-2 py-0.5 bg-purple-100 text-purple-800 rounded-md text-[10px] font-bold">類型 + 格式檢查</span>
+                    </div>
+                    <p class="text-xs text-slate-600 mb-2">防止無效日期（如 32/08），並統一 DD/MM/YYYY 格式。</p>
+                    <div class="bg-slate-50 p-2.5 rounded-xl border">
+                        <span class="text-[11px] text-slate-500 block mb-1">可出席日期：</span>
+                        <input type="date" value="2026-09-09" class="p-1.5 border rounded-lg text-xs bg-white w-full outline-none">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 3: INTERACTIVE PRACTICE QUIZ -->
+        <section id="screenQuiz" class="hidden space-y-4">
+            <!-- Progress Bar & Header -->
+            <div class="bg-white rounded-2xl p-3.5 sm:p-4 shadow-sm border border-slate-100 flex justify-between items-center gap-2">
+                <div class="flex items-center space-x-2 w-full">
+                    <span id="qBadge" class="bg-indigo-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-md shrink-0">第 1 / 10 題</span>
+                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div id="qProgressBar" class="bg-indigo-600 h-full w-[10%] transition-all duration-300"></div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3 text-xs font-bold text-slate-600 shrink-0">
+                    <div><i class="fa-solid fa-clock text-amber-500 mr-1"></i><span id="timerText" class="font-mono">00:00</span></div>
+                    <div><i class="fa-solid fa-star text-yellow-500 mr-1"></i><span id="scoreText" class="font-mono text-indigo-600">0</span></div>
+                </div>
+            </div>
+
+            <!-- Question Card Container -->
+            <div class="bg-white rounded-3xl shadow-lg p-5 sm:p-7 border border-slate-100 relative overflow-hidden">
+                <div id="qCategory" class="inline-block px-2.5 py-0.5 bg-indigo-50 text-indigo-700 font-bold text-[11px] rounded-full mb-2">
+                    情境分析題
+                </div>
+
+                <h3 id="qText" class="text-base sm:text-lg font-bold text-slate-800 mb-3 leading-snug">
+                    題目載入中...
+                </h3>
+
+                <!-- Mobile Interactive Sandbox Widget inside question -->
+                <div id="qInteractiveWidget" class="my-3 p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs">
+                    <!-- Dynamic mini interactive simulation rendered here -->
+                </div>
+
+                <!-- Options List -->
+                <div id="qOptions" class="space-y-2.5 my-4">
+                    <!-- Option buttons generated dynamically -->
+                </div>
+
+                <!-- Feedback & Explanation Box -->
+                <div id="qExplanation" class="hidden p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed mb-4 border">
+                    <!-- Feedback injected dynamically -->
+                </div>
+            </div>
+
+            <!-- Sticky Mobile Bottom Bar for Easy Thumb Access -->
+            <div class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 p-3 z-20 sm:relative sm:bg-transparent sm:border-none sm:p-0">
+                <div class="max-w-4xl mx-auto flex justify-end">
+                    <button id="nextBtn" onclick="handleNextQuestion()" disabled class="w-full sm:w-auto py-3 px-6 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:text-slate-500 active:scale-[0.98] text-white font-bold rounded-2xl transition shadow flex items-center justify-center space-x-2 text-sm">
+                        <span>下一題</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 4: RESULTS & PDF REPORT -->
+        <section id="screenResults" class="hidden space-y-4">
+            <!-- Summary Banner -->
+            <div class="bg-gradient-to-br from-indigo-800 via-indigo-700 to-slate-900 text-white rounded-3xl p-5 sm:p-7 shadow-xl relative overflow-hidden text-center sm:text-left flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="space-y-1.5">
+                    <div class="inline-flex items-center space-x-1.5 bg-yellow-400/20 text-yellow-300 px-2.5 py-0.5 rounded-full text-[11px] font-bold border border-yellow-400/30">
+                        <i class="fa-solid fa-award"></i>
+                        <span>練習完成！挑戰成功</span>
+                    </div>
+                    <h2 class="text-xl sm:text-2xl font-black">表現成績總覽</h2>
+                    <p class="text-indigo-200 text-xs">學生：<span id="resStudentName" class="font-bold text-white"></span> (<span id="resStudentClass"></span> 班 <span id="resStudentId"></span> 號)</p>
+                </div>
+
+                <div class="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 text-center w-full sm:w-auto min-w-[150px]">
+                    <span class="text-[10px] uppercase tracking-wider text-indigo-200 block">總得分 (Score)</span>
+                    <div class="text-3xl sm:text-4xl font-black text-yellow-300 my-0.5"><span id="resScore">0</span> <span class="text-xs text-white font-normal">/ 100</span></div>
+                    <span id="resGradeBadge" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-500 text-white inline-block">極佳 Excellent</span>
+                </div>
+            </div>
+
+            <!-- Action Toolbar for Mobile -->
+            <div class="flex flex-col gap-2.5 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                <p class="text-xs text-slate-600">
+                    <i class="fa-solid fa-file-pdf text-red-500 mr-1"></i>
+                    生成並下載專屬的 PDF 成績報告（包含個人班別學號與全套題目檢討）。
+                </p>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <button onclick="generatePDF()" class="w-full sm:w-auto py-3 px-4 bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white font-bold text-xs sm:text-sm rounded-xl shadow transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-download"></i>
+                        <span>下載 PDF 成績報告</span>
+                    </button>
+                    <button onclick="restartQuiz()" class="w-full sm:w-auto py-2.5 px-4 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] text-slate-700 font-bold text-xs sm:text-sm rounded-xl transition flex items-center justify-center space-x-1">
+                        <i class="fa-solid fa-rotate-right"></i>
+                        <span>重新練習</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Detailed Question Review List -->
+            <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-800 text-base mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-indigo-600"></i>
+                    答題細項與檢討 (Detailed Review)
+                </h3>
+                <div id="reviewList" class="space-y-3">
+                    <!-- Detailed review cards populated dynamically -->
+                </div>
+            </div>
+        </section>
+
+        <!-- HIDDEN PDF REPORT TEMPLATE (Captured cleanly by html2pdf) -->
+        <div id="pdfReportContainer" class="hidden">
+            <div id="pdfReportContent" class="p-6 bg-white text-slate-900 font-sans max-w-[700px] mx-auto space-y-4">
+                <!-- PDF Header -->
+                <div class="border-b-2 border-indigo-600 pb-3 flex justify-between items-end">
+                    <div>
+                        <h1 class="text-xl font-black text-indigo-900">數據有效性檢驗與用戶界面設計</h1>
+                        <p class="text-[10px] text-slate-500 mt-0.5">ICT 資訊及通訊科技 - 學習表現報告 (Mobile Report)</p>
+                    </div>
+                    <div class="text-right text-[10px] text-slate-500">
+                        <p>日期：<span id="pdfReportDate">2026-09-09</span></p>
+                        <p>用時：<span id="pdfReportTime">00:00</span></p>
+                    </div>
+                </div>
+
+                <!-- Student Info Card -->
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 grid grid-cols-3 gap-2 text-center">
+                    <div>
+                        <span class="text-[10px] text-slate-500 block">班別 (Class)</span>
+                        <span id="pdfClass" class="font-bold text-indigo-800 text-sm">4A</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-500 block">學號 (No.)</span>
+                        <span id="pdfId" class="font-bold text-indigo-800 text-sm">05</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-500 block">姓名 (Name)</span>
+                        <span id="pdfName" class="font-bold text-indigo-800 text-sm">陳大文</span>
+                    </div>
+                </div>
+
+                <!-- Score Summary Box -->
+                <div class="flex justify-between items-center bg-indigo-50 border border-indigo-200 p-3 rounded-xl">
+                    <div>
+                        <span class="text-[10px] font-bold text-indigo-700 block">總體評級 (Grade)</span>
+                        <span id="pdfGrade" class="text-lg font-black text-indigo-900">優秀 (A+)</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[10px] font-bold text-indigo-700 block">最終得分 (Total Score)</span>
+                        <span id="pdfScore" class="text-2xl font-black text-indigo-700">90 / 100</span>
+                    </div>
+                </div>
+
+                <!-- Performance Table -->
+                <div>
+                    <h3 class="font-bold text-xs text-slate-800 mb-1.5 border-l-4 border-indigo-600 pl-2">答題記錄 (Performance)</h3>
+                    <table class="w-full text-[10px] text-left border-collapse border border-slate-200">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700">
+                                <th class="border border-slate-200 p-1.5 text-center w-8">題</th>
+                                <th class="border border-slate-200 p-1.5">測試主題</th>
+                                <th class="border border-slate-200 p-1.5 text-center">學生答案</th>
+                                <th class="border border-slate-200 p-1.5 text-center">正確答案</th>
+                                <th class="border border-slate-200 p-1.5 text-center w-12">結果</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pdfTableBody">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pt-4 border-t border-slate-200 text-[10px] text-slate-400 flex justify-between items-center">
+                    <p>由系統自動生成驗證。</p>
+                    <p>教師簽署：_____________________</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-3 text-center text-[11px] text-slate-500">
+        <div class="max-w-4xl mx-auto px-4">
+            數據有效性檢驗 (Data Validation) & UI 設計 - 手機微學習系統
+        </div>
+    </footer>
+
+    <script>
+        let studentInfo = { className: '', studentId: '', name: '' };
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let timerInterval = null;
+        let secondsElapsed = 0;
+        let userAnswers = [];
+
+        /* Question Dataset with Mini Interactive Sandbox Widgets for Mobile */
+        const questions = [
+            {
+                id: 1,
+                category: "表 2.3 完整性檢查",
+                question: "小明在填寫報名表時，未輸入「姓名」便按下提交，系統即時提示「此欄位為必填，不能留空」。這屬於哪種數據有效性檢驗？",
+                widgetType: "completeness",
+                options: [
+                    "A. 完整性檢查 (Completeness Check)",
+                    "B. 長度檢查 (Length Check)",
+                    "C. 格式檢查 (Format Check)",
+                    "D. 一致性檢查 (Consistency Check)"
+                ],
+                correct: 0,
+                explanation: "【完整性檢查】確保必填欄位中必須填有資料，防止用戶漏填重要數據。"
+            },
+            {
+                id: 2,
+                category: "表 2.4 UI元件與有效性",
+                question: "在設計「性別」欄位時，要求申請人只能在「M」或「F」中選擇其一。最適合的 UI 元件及對應檢驗是？",
+                widgetType: "fixed_value_ui",
+                options: [
+                    "A. 日期選擇器；格式檢查",
+                    "B. 下拉式選單 / 單選按鈕；固定值檢查",
+                    "C. 複選框；一致性檢查",
+                    "D. 多行文本框；唯一性檢查"
+                ],
+                correct: 1,
+                explanation: "下拉式選單 (Dropdown) 與單選按鈕 (Radio Button) 限制輸入僅能來自特定的已知值，屬於【固定值檢查】。"
+            },
+            {
+                id: 3,
+                category: "表 2.3 範圍檢查",
+                question: "系統規定「申請人年齡必須大於 12 歲」。若輸入「10」，系統拒絕接收。這主要觸發了哪種檢驗？",
+                widgetType: "range",
+                options: [
+                    "A. 類型檢查 (Type Check)",
+                    "B. 範圍檢查 (Range Check)",
+                    "C. 長度檢查 (Length Check)",
+                    "D. 唯一性檢查 (Uniqueness Check)"
+                ],
+                correct: 1,
+                explanation: "【範圍檢查】確保輸入的數值位於指定範圍內（例如 年齡 > 12）。"
+            },
+            {
+                id: 4,
+                category: "表 2.3 長度檢查",
+                question: "香港電話號碼要求填寫 8 位數字。如果輸入 7 位數「9123456」，系統提示錯誤。這屬於什麼檢查？",
+                widgetType: "length",
+                options: [
+                    "A. 格式檢查 (Format Check)",
+                    "B. 長度檢查 (Length Check)",
+                    "C. 唯一性檢查 (Uniqueness Check)",
+                    "D. 一致性檢查 (Consistency Check)"
+                ],
+                correct: 1,
+                explanation: "【長度檢查】確保數據的字符數/位數完全符合規範（如 8 位數）。"
+            },
+            {
+                id: 5,
+                category: "表 2.3 格式檢查",
+                question: "申請人在輸入電郵時填寫為「john_smith.gmail.com」，系統顯示「必須包含『@』符號」。這是哪種檢驗？",
+                widgetType: "format",
+                options: [
+                    "A. 格式檢查 (Format Check)",
+                    "B. 完整性檢查 (Completeness Check)",
+                    "C. 範圍檢查 (Range Check)",
+                    "D. 固定值檢查 (Fixed Value Check)"
+                ],
+                correct: 0,
+                explanation: "【格式檢查】確保數據遵循規定的文字模式（如包含『@』符號）。"
+            },
+            {
+                id: 6,
+                category: "表 2.3 一致性檢查",
+                question: "預訂表單中，用戶選擇「結束日期：2026/08/01」，而「開始日期：2026/08/15」。系統提示「結束日期必須在開始日期之後」。這屬於：",
+                widgetType: "consistency",
+                options: [
+                    "A. 一致性檢查 (Consistency Check)",
+                    "B. 類型檢查 (Type Check)",
+                    "C. 唯一性檢查 (Uniqueness Check)",
+                    "D. 完整性檢查 (Completeness Check)"
+                ],
+                correct: 0,
+                explanation: "【一致性檢查】比較多個欄位的數據關係，確保邏輯相互吻合無矛盾。"
+            },
+            {
+                id: 7,
+                category: "表 2.4 複選框 UI 特點",
+                question: "活動報名包含「海灘清理」、「半日植樹」、「義教服務」。學生可同時選擇多於一個活動。關於「複選框 (Checkbox)」，何者正確？",
+                widgetType: "checkbox_ui",
+                options: [
+                    "A. 屬於固定值檢查：可選取一個或多個特定值",
+                    "B. 屬於唯一性檢查：只能選取一個特定值",
+                    "C. 屬於類型檢查：只能輸入日期",
+                    "D. 屬於長度檢查：限制字數在 8 位內"
+                ],
+                correct: 0,
+                explanation: "【複選框】屬於固定值檢查，其特性是允許選取「一個或多個」特定選項。"
+            },
+            {
+                id: 8,
+                category: "表 2.3 唯一性檢查",
+                question: "每位學生只能申請一次獎學金，資料庫不允許兩位申請人輸入相同的「學生 ID」。這需要實施哪種檢驗？",
+                widgetType: "uniqueness",
+                options: [
+                    "A. 唯一性檢查 (Uniqueness Check)",
+                    "B. 固定值檢查 (Fixed Value Check)",
+                    "C. 長度檢查 (Length Check)",
+                    "D. 類型檢查 (Type Check)"
+                ],
+                correct: 0,
+                explanation: "【唯一性檢查】確保數據在資料庫中獨一無二不重複。"
+            },
+            {
+                id: 9,
+                category: "表 2.4 日期選擇器 UI",
+                question: "「日期選擇器 (Date Picker)」能防止選擇「32/08/2026」等無效日期，並統一格式為「DD/MM/YYYY」。它結合了哪兩種檢驗？",
+                widgetType: "datepicker_ui",
+                options: [
+                    "A. 完整性檢查 與 唯一性檢查",
+                    "B. 類型檢查 與 格式檢查",
+                    "C. 固定值檢查 與 範圍檢查",
+                    "D. 長度檢查 與 一致性檢查"
+                ],
+                correct: 1,
+                explanation: "日期選擇器確保只能輸入有效日期（【類型檢查】），並呈現標準日期格式（【格式檢查】）。"
+            },
+            {
+                id: 10,
+                category: "綜合應用題",
+                question: "設計「年齡輸入框」時，為防止用戶輸入「Fifteen」等英文字元，必須加入哪種有效性檢驗？",
+                widgetType: "type_check",
+                options: [
+                    "A. 類型檢查：確保數據必須為數字類型",
+                    "B. 一致性檢查：確保數據與姓名相符",
+                    "C. 完整性檢查：確保欄位被填寫",
+                    "D. 唯一性檢查：確保沒有人年齡相同"
+                ],
+                correct: 0,
+                explanation: "【類型檢查】確保數據屬於指定資料型態（例如必須是數字，不能包含英文字元）。"
+            }
+        ];
+
+        function switchScreen(screenName) {
+            document.getElementById('screenLogin').classList.add('hidden');
+            document.getElementById('screenReview').classList.add('hidden');
+            document.getElementById('screenQuiz').classList.add('hidden');
+            document.getElementById('screenResults').classList.add('hidden');
+
+            if (screenName === 'review') {
+                document.getElementById('screenReview').classList.remove('hidden');
+            } else if (screenName === 'quiz') {
+                document.getElementById('screenQuiz').classList.remove('hidden');
+                startQuiz();
+            } else if (screenName === 'results') {
+                document.getElementById('screenResults').classList.remove('hidden');
+            } else {
+                document.getElementById('screenLogin').classList.remove('hidden');
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function handleStartApp(event) {
+            event.preventDefault();
+            saveStudentInfo();
+            switchScreen('quiz');
+        }
+
+        function handleStartStudyMode(event) {
+            event.preventDefault();
+            const classVal = document.getElementById('inputClass').value.trim();
+            const idVal = document.getElementById('inputId').value.trim();
+            const nameVal = document.getElementById('inputName').value.trim();
+
+            if (!classVal || !idVal || !nameVal) {
+                alert('請先填寫班別、學號及姓名！');
+                return;
+            }
+            saveStudentInfo();
+            switchScreen('review');
+        }
+
+        function saveStudentInfo() {
+            studentInfo.className = document.getElementById('inputClass').value.trim();
+            studentInfo.studentId = document.getElementById('inputId').value.trim();
+            studentInfo.name = document.getElementById('inputName').value.trim();
+
+            document.getElementById('headerStudentText').textContent = `${studentInfo.className} (${studentInfo.studentId}) ${studentInfo.name}`;
+            document.getElementById('userInfoHeader').classList.remove('hidden');
+        }
+
+        function switchReviewTab(tab) {
+            const b1 = document.getElementById('tabBtn1');
+            const b2 = document.getElementById('tabBtn2');
+            const c1 = document.getElementById('tabContent1');
+            const c2 = document.getElementById('tabContent2');
+
+            if (tab === 'table23') {
+                b1.className = "flex-1 py-2.5 px-2 text-center font-bold text-xs rounded-lg transition bg-indigo-600 text-white shadow-sm";
+                b2.className = "flex-1 py-2.5 px-2 text-center font-bold text-xs rounded-lg transition text-slate-600 hover:bg-slate-100";
+                c1.classList.remove('hidden');
+                c2.classList.add('hidden');
+            } else {
+                b2.className = "flex-1 py-2.5 px-2 text-center font-bold text-xs rounded-lg transition bg-indigo-600 text-white shadow-sm";
+                b1.className = "flex-1 py-2.5 px-2 text-center font-bold text-xs rounded-lg transition text-slate-600 hover:bg-slate-100";
+                c2.classList.remove('hidden');
+                c1.classList.add('hidden');
+            }
+        }
+
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            secondsElapsed = 0;
+            userAnswers = [];
+            
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                secondsElapsed++;
+                const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+                const secs = String(secondsElapsed % 60).padStart(2, '0');
+                document.getElementById('timerText').textContent = `${mins}:${secs}`;
+            }, 1000);
+
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = questions[currentQuestionIndex];
+            document.getElementById('qBadge').textContent = `第 ${currentQuestionIndex + 1} / ${questions.length} 題`;
+            document.getElementById('qProgressBar').style.width = `${((currentQuestionIndex + 1) / questions.length) * 100}%`;
+            document.getElementById('scoreText').textContent = score;
+            document.getElementById('qCategory').textContent = q.category;
+            document.getElementById('qText').textContent = q.question;
+
+            // Render Mobile Interactive Sandbox Widget
+            renderWidget(q.widgetType);
+
+            // Reset Explanation & Next button state
+            const expBox = document.getElementById('qExplanation');
+            expBox.classList.add('hidden');
+            expBox.className = "hidden p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed mb-4 border";
+
+            const nextBtn = document.getElementById('nextBtn');
+            nextBtn.disabled = true;
+            nextBtn.onclick = handleNextQuestion;
+            if (currentQuestionIndex === questions.length - 1) {
+                nextBtn.innerHTML = `<span>提交並生成報告</span> <i class="fa-solid fa-flag-checkered"></i>`;
+            } else {
+                nextBtn.innerHTML = `<span>下一題</span> <i class="fa-solid fa-arrow-right"></i>`;
+            }
+
+            // Render Options with Mobile Touch Feedback
+            const optionsDiv = document.getElementById('qOptions');
+            optionsDiv.innerHTML = '';
+
+            q.options.forEach((optText, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-3.5 rounded-2xl border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/40 active:scale-[0.98] transition font-medium text-slate-700 flex items-center justify-between text-xs sm:text-sm group min-h-[48px]";
+                btn.onclick = () => selectOption(idx);
+                btn.id = `optBtn_${idx}`;
+                btn.innerHTML = `
+                    <span class="pr-2">${optText}</span>
+                    <i class="fa-regular fa-circle text-slate-300 group-hover:text-indigo-500 text-base shrink-0"></i>
+                `;
+                optionsDiv.appendChild(btn);
+            });
+        }
+
+        // Mini Interactive Sandbox Widgets for Learning
+        function renderWidget(type) {
+            const w = document.getElementById('qInteractiveWidget');
+            w.innerHTML = '';
+
+            if (type === 'completeness') {
+                w.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between font-bold text-slate-700">
+                            <span><i class="fa-solid fa-vial text-indigo-500 mr-1"></i> 模擬表單：</span>
+                            <span id="demoMsg" class="text-[11px] text-red-500 font-bold"></span>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="text" id="demoInput" placeholder="姓名欄位 (留空測試)" class="flex-1 p-2 border rounded-xl text-xs outline-none bg-white">
+                            <button onclick="testCompleteness()" class="px-3 py-1.5 bg-indigo-600 text-white font-bold rounded-xl text-xs active:scale-95">點擊提交</button>
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'range') {
+                w.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between font-bold text-slate-700">
+                            <span><i class="fa-solid fa-vial text-indigo-500 mr-1"></i> 年齡範圍測試 (需 > 12 歲)：</span>
+                            <span id="demoMsg" class="text-[11px] text-slate-500 font-bold"></span>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="number" id="demoInput" placeholder="輸入數字 (如 10 或 15)" class="flex-1 p-2 border rounded-xl text-xs outline-none bg-white">
+                            <button onclick="testRange()" class="px-3 py-1.5 bg-indigo-600 text-white font-bold rounded-xl text-xs active:scale-95">驗證年齡</button>
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'length') {
+                w.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between font-bold text-slate-700">
+                            <span><i class="fa-solid fa-vial text-indigo-500 mr-1"></i> 電話長度測試 (需為8位)：</span>
+                            <span id="demoMsg" class="text-[11px] font-bold">目前字數: 0</span>
+                        </div>
+                        <input type="text" id="demoInput" oninput="testLength(this.value)" placeholder="輸入電話號碼 (如 9123456)" class="w-full p-2 border rounded-xl text-xs outline-none bg-white">
+                    </div>
+                `;
+            } else if (type === 'format') {
+                w.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between font-bold text-slate-700">
+                            <span><i class="fa-solid fa-vial text-indigo-500 mr-1"></i> 電郵格式測試：</span>
+                            <span id="demoMsg" class="text-[11px] font-bold"></span>
+                        </div>
+                        <input type="text" id="demoInput" oninput="testFormat(this.value)" placeholder="輸入電郵 (例如嘗試缺少 @ 符號)" class="w-full p-2 border rounded-xl text-xs outline-none bg-white">
+                    </div>
+                `;
+            } else if (type === 'consistency') {
+                w.innerHTML = `
+                    <div class="space-y-1.5">
+                        <span class="font-bold text-slate-700 block"><i class="fa-solid fa-vial text-indigo-500 mr-1"></i> 日期一致性測試：</span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div><span class="text-[10px] text-slate-500">開始日期:</span><input type="date" value="2026-08-15" class="w-full p-1 border rounded text-[11px] bg-white"></div>
+                            <div><span class="text-[10px] text-slate-500">結束日期:</span><input type="date" value="2026-08-01" class="w-full p-1 border rounded text-[11px] bg-white"></div>
+                        </div>
+                        <p class="text-[11px] text-red-600 font-bold bg-red-50 p-1.5 rounded border border-red-200 mt-1">⚠️ 邏輯錯誤：結束日期早於開始日期！</p>
+                    </div>
+                `;
+            } else {
+                w.innerHTML = `
+                    <div class="flex items-center space-x-2 text-indigo-700 font-bold">
+                        <i class="fa-solid fa-lightbulb"></i>
+                        <span>提示：請結合實際界面設計與有效性定義選出最合適的答案。</span>
+                    </div>
+                `;
+            }
+        }
+
+        function testCompleteness() {
+            const val = document.getElementById('demoInput').value.trim();
+            const msg = document.getElementById('demoMsg');
+            if (!val) {
+                msg.textContent = "❌ 警告：欄位不能留空！";
+                msg.className = "text-[11px] text-red-600 font-bold";
+            } else {
+                msg.textContent = "✓ 已填寫";
+                msg.className = "text-[11px] text-emerald-600 font-bold";
+            }
+        }
+
+        function testRange() {
+            const val = parseInt(document.getElementById('demoInput').value);
+            const msg = document.getElementById('demoMsg');
+            if (isNaN(val)) {
+                msg.textContent = "請輸入數字";
+                msg.className = "text-[11px] text-slate-500 font-bold";
+            } else if (val <= 12) {
+                msg.textContent = "❌ 年齡必須 > 12 歲！";
+                msg.className = "text-[11px] text-red-600 font-bold";
+            } else {
+                msg.textContent = "✓ 符合範圍需求";
+                msg.className = "text-[11px] text-emerald-600 font-bold";
+            }
+        }
+
+        function testLength(val) {
+            const msg = document.getElementById('demoMsg');
+            if (val.length === 8) {
+                msg.textContent = `✓ 剛好 8 位數 (符合長度)`;
+                msg.className = "text-[11px] text-emerald-600 font-bold";
+            } else {
+                msg.textContent = `❌ 目前 ${val.length} 位 (必須為8位)`;
+                msg.className = "text-[11px] text-red-600 font-bold";
+            }
+        }
+
+        function testFormat(val) {
+            const msg = document.getElementById('demoMsg');
+            if (val.includes('@')) {
+                msg.textContent = "✓ 包含 '@' 符號";
+                msg.className = "text-[11px] text-emerald-600 font-bold";
+            } else {
+                msg.textContent = "❌ 格式無效 (缺少 @)";
+                msg.className = "text-[11px] text-red-600 font-bold";
+            }
+        }
+
+        function selectOption(selectedIndex) {
+            const q = questions[currentQuestionIndex];
+            
+            q.options.forEach((_, idx) => {
+                const btn = document.getElementById(`optBtn_${idx}`);
+                btn.disabled = true;
+                btn.classList.remove('hover:border-indigo-400', 'hover:bg-indigo-50/40');
+            });
+
+            const selectedBtn = document.getElementById(`optBtn_${selectedIndex}`);
+            const isCorrect = selectedIndex === q.correct;
+
+            userAnswers.push({
+                questionId: q.id,
+                category: q.category,
+                selected: selectedIndex,
+                correct: q.correct,
+                isCorrect: isCorrect,
+                userAnswerText: q.options[selectedIndex],
+                correctAnswerText: q.options[q.correct]
+            });
+
+            const expBox = document.getElementById('qExplanation');
+            expBox.classList.remove('hidden');
+
+            if (isCorrect) {
+                score += 10;
+                document.getElementById('scoreText').textContent = score;
+                selectedBtn.className = "w-full text-left p-3.5 rounded-2xl border-2 border-emerald-500 bg-emerald-50 text-emerald-900 font-bold flex items-center justify-between text-xs sm:text-sm min-h-[48px]";
+                selectedBtn.querySelector('i').className = "fa-solid fa-circle-check text-emerald-600 text-base shrink-0";
+
+                expBox.classList.add('bg-emerald-50', 'border-emerald-200', 'text-emerald-900');
+                expBox.innerHTML = `<div class="font-bold text-emerald-800 mb-1 flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> 答對了！非常優秀！</div>${q.explanation}`;
+            } else {
+                selectedBtn.className = "w-full text-left p-3.5 rounded-2xl border-2 border-red-500 bg-red-50 text-red-900 font-bold flex items-center justify-between text-xs sm:text-sm min-h-[48px]";
+                selectedBtn.querySelector('i').className = "fa-solid fa-circle-xmark text-red-600 text-base shrink-0";
+
+                const correctBtn = document.getElementById(`optBtn_${q.correct}`);
+                correctBtn.className = "w-full text-left p-3.5 rounded-2xl border-2 border-emerald-500 bg-emerald-50 text-emerald-900 font-bold flex items-center justify-between text-xs sm:text-sm min-h-[48px]";
+                correctBtn.querySelector('i').className = "fa-solid fa-circle-check text-emerald-600 text-base shrink-0";
+
+                expBox.classList.add('bg-red-50', 'border-red-200', 'text-red-900');
+                expBox.innerHTML = `<div class="font-bold text-red-800 mb-1 flex items-center gap-1"><i class="fa-solid fa-circle-xmark"></i> 答錯了！正確答案是：${q.options[q.correct]}</div>${q.explanation}`;
+            }
+
+            document.getElementById('nextBtn').disabled = false;
+        }
+
+        function handleNextQuestion() {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+            } else {
+                finishQuiz();
+            }
+        }
+
+        function finishQuiz() {
+            clearInterval(timerInterval);
+
+            document.getElementById('resStudentName').textContent = studentInfo.name;
+            document.getElementById('resStudentClass').textContent = studentInfo.className;
+            document.getElementById('resStudentId').textContent = studentInfo.studentId;
+            document.getElementById('resScore').textContent = score;
+
+            const badge = document.getElementById('resGradeBadge');
+            if (score >= 90) {
+                badge.textContent = "極佳 Excellent (A+)";
+                badge.className = "text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-500 text-white inline-block";
+            } else if (score >= 70) {
+                badge.textContent = "良好 Good (B)";
+                badge.className = "text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-500 text-white inline-block";
+            } else if (score >= 50) {
+                badge.textContent = "合格 Pass (C)";
+                badge.className = "text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500 text-white inline-block";
+            } else {
+                badge.textContent = "需要再接再勵";
+                badge.className = "text-[10px] px-2 py-0.5 rounded-full font-bold bg-red-500 text-white inline-block";
+            }
+
+            const reviewList = document.getElementById('reviewList');
+            reviewList.innerHTML = '';
+
+            userAnswers.forEach((ans, idx) => {
+                const q = questions.find(item => item.id === ans.questionId);
+                const itemDiv = document.createElement('div');
+                itemDiv.className = `p-3.5 rounded-2xl border ${ans.isCorrect ? 'bg-slate-50 border-slate-200' : 'bg-red-50/40 border-red-200'}`;
+                
+                itemDiv.innerHTML = `
+                    <div class="flex items-center justify-between gap-2 mb-1.5">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${ans.isCorrect ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
+                            第 ${idx + 1} 題 - ${ans.isCorrect ? '答對 (+10分)' : '答錯 (0分)'}
+                        </span>
+                        <span class="text-[10px] text-slate-500">${ans.category}</span>
+                    </div>
+                    <p class="font-bold text-xs sm:text-sm text-slate-800 mb-2 leading-tight">${q.question}</p>
+                    <div class="text-xs space-y-0.5 mb-2">
+                        <p class="${ans.isCorrect ? 'text-emerald-700' : 'text-red-600'}"><strong>你的選擇：</strong> ${ans.userAnswerText}</p>
+                        ${!ans.isCorrect ? `<p class="text-emerald-700"><strong>正確答案：</strong> ${ans.correctAnswerText}</p>` : ''}
+                    </div>
+                    <p class="text-[11px] text-slate-600 bg-white p-2 rounded-xl border border-slate-200">${q.explanation}</p>
+                `;
+                reviewList.appendChild(itemDiv);
+            });
+
+            switchScreen('results');
+
+            if (typeof confetti === 'function' && score >= 60) {
+                confetti({
+                    particleCount: 80,
+                    spread: 60,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+
+        function restartQuiz() {
+            switchScreen('quiz');
+        }
+
+        function generatePDF() {
+            const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+            const secs = String(secondsElapsed % 60).padStart(2, '0');
+            const timeStr = `${mins}分${secs}秒`;
+
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+            document.getElementById('pdfClass').textContent = studentInfo.className || '未設定';
+            document.getElementById('pdfId').textContent = studentInfo.studentId || '未設定';
+            document.getElementById('pdfName').textContent = studentInfo.name || '未設定';
+            document.getElementById('pdfReportDate').textContent = dateStr;
+            document.getElementById('pdfReportTime').textContent = timeStr;
+            document.getElementById('pdfScore').textContent = `${score} / 100`;
+
+            let gradeStr = "優秀 (A+)";
+            if (score < 90 && score >= 70) gradeStr = "良好 (B)";
+            else if (score < 70 && score >= 50) gradeStr = "合格 (C)";
+            else if (score < 50) gradeStr = "需改進 (D)";
+            document.getElementById('pdfGrade').textContent = gradeStr;
+
+            const pdfTableBody = document.getElementById('pdfTableBody');
+            pdfTableBody.innerHTML = '';
+
+            userAnswers.forEach((ans, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50';
+                
+                const selectedShort = ans.userAnswerText.substring(0, 12) + '...';
+                const correctShort = ans.correctAnswerText.substring(0, 12) + '...';
+
+                tr.innerHTML = `
+                    <td class="border border-slate-200 p-1.5 text-center font-bold">${idx + 1}</td>
+                    <td class="border border-slate-200 p-1.5 font-medium">${ans.category}</td>
+                    <td class="border border-slate-200 p-1.5 text-center ${ans.isCorrect ? 'text-slate-800' : 'text-red-600 font-bold'}">${selectedShort}</td>
+                    <td class="border border-slate-200 p-1.5 text-center text-emerald-700 font-bold">${correctShort}</td>
+                    <td class="border border-slate-200 p-1.5 text-center font-bold ${ans.isCorrect ? 'text-emerald-600' : 'text-red-500'}">
+                        ${ans.isCorrect ? '✓' : '✗'}
+                    </td>
+                `;
+                pdfTableBody.appendChild(tr);
+            });
+
+            const pdfContainer = document.getElementById('pdfReportContainer');
+            pdfContainer.classList.remove('hidden');
+
+            const element = document.getElementById('pdfReportContent');
+            const fileName = `數據有效性學習報告_${studentInfo.className}_${studentInfo.studentId}_${studentInfo.name}.pdf`;
+
+            const opt = {
+                margin:       [8, 8, 8, 8],
+                filename:     fileName,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            if (typeof html2pdf !== 'undefined') {
+                html2pdf().set(opt).from(element).save().then(() => {
+                    pdfContainer.classList.add('hidden');
+                }).catch(err => {
+                    console.error('PDF Error:', err);
+                    pdfContainer.classList.add('hidden');
+                    window.print();
+                });
+            } else {
+                window.print();
+                pdfContainer.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>

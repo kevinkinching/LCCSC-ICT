@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Excel 試算表與函數能力評估（20 題挑戰賽）</title>
+  <style>
+    :root {
+      --primary: #107c41;
+      --primary-light: #e6f4ea;
+      --accent: #2b579a;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --border: #cbd5e1;
+      --success: #15803d;
+      --error: #b91c1c;
+    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", "Microsoft JhengHei", sans-serif; }
+    body { background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+    .container { max-width: 960px; margin: 0 auto; background: var(--card); border-radius: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 30px; }
+    h1 { color: var(--primary); text-align: center; margin-top: 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .subtitle { text-align: center; color: #64748b; margin-bottom: 25px; }
+
+    /* 參考試算表樣式 */
+    .sheet-table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 13.5px; }
+    .sheet-table th, .sheet-table td { border: 1px solid #cbd5e1; padding: 6px 10px; text-align: center; }
+    .sheet-table th, .sheet-table td.header-col { background: #f1f5f9; color: #475569; font-weight: bold; }
+
+    /* 個人資料與計時器 */
+    .form-group { margin-bottom: 18px; }
+    label { font-weight: 600; display: block; margin-bottom: 6px; }
+    input[type="text"] { width: 100%; padding: 12px 14px; border: 2px solid var(--border); border-radius: 8px; font-size: 16px; outline: none; transition: border-color .2s; }
+    input[type="text"]:focus { border-color: var(--primary); }
+    .formula-input { font-family: "Courier New", Courier, monospace; font-size: 15px; font-weight: bold; color: #0f172a; background: #fff; }
+    .btn { display: inline-block; width: 100%; background: var(--primary); color: white; padding: 14px; border: none; border-radius: 8px; font-size: 17px; font-weight: bold; cursor: pointer; transition: background .2s; text-align: center; }
+    .btn:hover { background: #0c6233; }
+    .timer-badge { position: sticky; top: 12px; z-index: 100; background: #1e293b; color: #fff; padding: 8px 18px; border-radius: 20px; font-weight: bold; width: fit-content; margin: 0 auto 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+
+    /* 題目結構 */
+    .question-card { background: #fff; border: 1.5px solid var(--border); border-radius: 10px; padding: 22px; margin-bottom: 25px; }
+    .q-title { font-size: 16.5px; font-weight: bold; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+    .badge { color: white; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+    .badge-mc { background: #6366f1; }
+    .badge-fill { background: #0284c7; }
+    .badge-block { background: #0d9488; }
+    .badge-typing { background: #d97706; }
+    .context-box { background: #f8fafc; padding: 12px 16px; border-radius: 6px; font-size: 14px; margin-bottom: 14px; border-left: 4px solid var(--accent); }
+
+    /* 選擇題按鈕 */
+    .mc-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media(max-width: 600px) { .mc-options { grid-template-columns: 1fr; } }
+    .mc-btn { background: #fff; border: 2px solid var(--border); padding: 12px; border-radius: 8px; text-align: left; cursor: pointer; font-size: 14.5px; transition: all .2s; }
+    .mc-btn:hover { border-color: var(--primary); background: var(--primary-light); }
+    .mc-btn.selected { border-color: var(--primary); background: var(--primary); color: white; }
+
+    /* 拖拉槽與標籤池（支援觸控與滑鼠） */
+    .pool { display: flex; flex-wrap: wrap; gap: 8px; min-height: 48px; background: #e2e8f0; padding: 10px; border-radius: 8px; margin-bottom: 12px; }
+    .chip { background: white; border: 1.5px solid #94a3b8; border-radius: 6px; padding: 6px 12px; cursor: grab; font-weight: 600; font-family: monospace; user-select: none; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .chip:active { cursor: grabbing; }
+    .drop-slot { display: inline-flex; align-items: center; justify-content: center; min-width: 85px; height: 38px; border: 2px dashed #94a3b8; border-radius: 6px; vertical-align: middle; background: white; margin: 0 4px; padding: 2px 8px; }
+    .drop-slot.filled { border-style: solid; border-color: var(--primary); background: var(--primary-light); }
+    .formula-line { line-height: 2.8; font-size: 14.5px; }
+
+    /* 報告表格與樣式 */
+    #report-section { display: none; }
+    .report-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13.5px; }
+    .report-table th, .report-table td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: left; }
+    .report-table th { background: #f1f5f9; }
+    .score-banner { text-align: center; padding: 20px; background: var(--primary-light); border-radius: 10px; margin: 20px 0; }
+    .score-banner h2 { margin: 0; font-size: 34px; color: var(--primary); }
+    .user-ans-text { font-family: monospace; font-weight: bold; color: #1e293b; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; display: inline-block; word-break: break-all; }
+    .user-ans-empty { color: #94a3b8; font-style: italic; }
+
+    /* 列印專用 PDF 樣式 */
+    @media print {
+      body { background: white; padding: 0; }
+      .container { box-shadow: none; border: none; width: 100%; max-width: 100%; padding: 0; }
+      #exam-section, #start-section, .btn-no-print, .timer-badge { display: none !important; }
+      #report-section { display: block !important; }
+      .report-table { font-size: 11px; }
+      .report-table th, .report-table td { padding: 5px 6px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- 頁面 1: 學生登入 -->
+  <div id="start-section">
+    <h1>📊 Excel 試算表與函數能力評估</h1>
+    <p class="subtitle">全卷共 20 題（選擇、拖拉、積木、手打各 5 題），建議作答時間：20 分鐘</p>
+    
+    <div class="form-group">
+      <label for="student-class">班別 (Class)：</label>
+      <input type="text" id="student-class" placeholder="例如：4A">
+    </div>
+    <div class="form-group">
+      <label for="student-num">學號 (Class No.)：</label>
+      <input type="text" id="student-num" placeholder="例如：15">
+    </div>
+    <div class="form-group">
+      <label for="student-name">姓名 (Full Name)：</label>
+      <input type="text" id="student-name" placeholder="例如：陳大文">
+    </div>
+
+    <div class="context-box">
+      <strong>作答溫馨提示：</strong>
+      <ul style="margin: 6px 0 0 18px; padding: 0;">
+        <li><strong>題型分佈</strong>：選擇題 (Q1-Q5)、拖拉填充題 (Q6-Q10)、積木短答 (Q11-Q15)、公式手打 (Q16-Q20)。</li>
+        <li><strong>大小寫不敏感</strong>：公式手打題完全支援大小寫（例如 <code>=SUMIF</code> 與 <code>=sumif</code>、儲存格 <code>A2</code> 與 <code>a2</code>、字串 <code>"1A"</code> 與 <code>"1a"</code> 均視為正確）[cite: 1, 4]。</li>
+        <li><strong>作答記錄</strong>：完成後將生成詳細報告單，記錄所有個人作答並可匯出為 PDF 檔案。</li>
+      </ul>
+    </div>
+
+    <button class="btn" onclick="startQuiz()">開始測驗 🚀</button>
+  </div>
+
+  <!-- 頁面 2: 作答區域 -->
+  <div id="exam-section" style="display: none;">
+    <div class="timer-badge" id="timer">⏱️ 剩餘時間：20:00</div>
+
+    <div class="context-box">
+      <strong>📌 全卷共用參考數據表（圖 4.44 / 4.48）：</strong>
+      <table class="sheet-table">
+        <thead>
+          <tr><th class="header-col"></th><th>A (班別)</th><th>B (學號)</th><th>C (姓名)</th><th>D (得分)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="header-col">1</td><td><strong>班別</strong></td><td><strong>學號</strong></td><td><strong>姓名</strong></td><td><strong>得分</strong></td></tr>
+          <tr><td class="header-col">2</td><td>1B</td><td>9</td><td>Ben</td><td>-2.5</td></tr>
+          <tr><td class="header-col">3</td><td>1A</td><td>15</td><td>Ada</td><td>7.45</td></tr>
+          <tr><td class="header-col">4</td><td>1A</td><td>16</td><td>Amy</td><td>8.9</td></tr>
+          <tr><td class="header-col">5</td><td>1B</td><td>22</td><td>Benedict</td><td>4.75</td></tr>
+          <tr><td class="header-col">6</td><td>1A</td><td>24</td><td>Cole</td><td>5.3</td></tr>
+          <tr><td class="header-col">7</td><td>1C</td><td>34</td><td>Carmen</td><td>5.3</td></tr>
+          <tr><td class="header-col">8</td><td></td><td></td><td></td><td></td></tr>
+          <tr><td class="header-col">9</td><td>基準</td><td>5</td><td></td><td>14/7/2020</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ==================== 第一部分：選擇題 (Q1 - Q5) ==================== -->
+    <div class="question-card" data-q="1">
+      <div class="q-title"><span>第 1 題・儲存格格式</span><span class="badge badge-mc">選擇題</span></div>
+      <div class="context-box">試算表儲存 500 名選手的編號，號碼布編號為 001、002 直至 500。</div>
+      <p>這些編號應設定為哪種儲存格格式，才可保留開首的「0」？</p>
+      <div class="mc-options">
+        <button class="mc-btn" onclick="chooseMC(1, 'A. 數值 (Number)', this)">A. 數值 (Number)</button>
+        <button class="mc-btn" onclick="chooseMC(1, 'B. 文字 (Text)', this)">B. 文字 (Text)</button>
+        <button class="mc-btn" onclick="chooseMC(1, 'C. 會計專用 (Accounting)', this)">C. 會計專用 (Accounting)</button>
+        <button class="mc-btn" onclick="chooseMC(1, 'D. 科學符號 (Scientific)', this)">D. 科學符號 (Scientific)</button>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="2">
+      <div class="q-title"><span>第 2 題・檢視與凍結窗格</span><span class="badge badge-mc">選擇題</span></div>
+      <div class="context-box">表格欄數極多，當向右捲動時，A 欄的「用戶編號」便會移出視線。</div>
+      <p>應使用試算表中的哪項功能，使捲動時 A 欄內容始終保持可見？</p>
+      <div class="mc-options">
+        <button class="mc-btn" onclick="chooseMC(2, 'A. 自動換列', this)">A. 自動換列</button>
+        <button class="mc-btn" onclick="chooseMC(2, 'B. 跨欄置中', this)">B. 跨欄置中</button>
+        <button class="mc-btn" onclick="chooseMC(2, 'C. 凍結窗格（凍結第一欄）', this)">C. 凍結窗格（凍結第一欄）</button>
+        <button class="mc-btn" onclick="chooseMC(2, 'D. 自動填滿數列', this)">D. 自動填滿數列</button>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="3">
+      <div class="q-title"><span>第 3 題・資料分析工具辨析</span><span class="badge badge-mc">選擇題</span></div>
+      <p>對於一間書店而言，下列哪種情況最適合使用「樞紐分析表 (Pivot Table)」？</p>
+      <div class="mc-options">
+        <button class="mc-btn" onclick="chooseMC(3, 'A. 藉由修改採購量估算總開支', this)">A. 藉由修改採購量估算總開支</button>
+        <button class="mc-btn" onclick="chooseMC(3, 'B. 藉由修改書本定價估算總利潤', this)">B. 藉由修改書本定價估算總利潤</button>
+        <button class="mc-btn" onclick="chooseMC(3, 'C. 匯總及比較不同類型書籍的銷售情況', this)">C. 匯總及比較不同類型書籍的銷售情況</button>
+        <button class="mc-btn" onclick="chooseMC(3, 'D. 自動產生 1 到 500 的連續流水號', this)">D. 自動產生 1 到 500 的連續流水號</button>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="4">
+      <div class="q-title"><span>第 4 題・隨機整數產生</span><span class="badge badge-mc">選擇題</span></div>
+      <p>下列哪條公式會均勻傳回 0 到 5 之間的一個隨機整數（包含 0 和 5）？</p>
+      <div class="mc-options">
+        <button class="mc-btn" onclick="chooseMC(4, 'A. =RAND() * 5', this)">A. =RAND() * 5</button>
+        <button class="mc-btn" onclick="chooseMC(4, 'B. =RAND(0, 5)', this)">B. =RAND(0, 5)</button>
+        <button class="mc-btn" onclick="chooseMC(4, 'C. =INT(RAND() * 6)', this)">C. =INT(RAND() * 6)</button>
+        <button class="mc-btn" onclick="chooseMC(4, 'D. =INT(RAND(5))', this)">D. =INT(RAND(5))</button>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="5">
+      <div class="q-title"><span>第 5 題・絕對儲存格參照複製</span><span class="badge badge-mc">選擇題</span></div>
+      <div class="context-box">儲存格 G2 的公式為 <code>=VLOOKUP(F2, $I$2:$J$5, 2)</code>。</div>
+      <p>若將儲存格 G2 複製到儲存格 G4，G4 內的公式會變成下列何者？</p>
+      <div class="mc-options">
+        <button class="mc-btn" onclick="chooseMC(5, 'A. =VLOOKUP(F4, $I$2:$J$5, 2)', this)">A. =VLOOKUP(F4, $I$2:$J$5, 2)</button>
+        <button class="mc-btn" onclick="chooseMC(5, 'B. =VLOOKUP(F2, $I$4:$J$7, 2)', this)">B. =VLOOKUP(F2, $I$4:$J$7, 2)</button>
+        <button class="mc-btn" onclick="chooseMC(5, 'C. =VLOOKUP(F4, $I$4:$J$7, 2)', this)">C. =VLOOKUP(F4, $I$4:$J$7, 2)</button>
+        <button class="mc-btn" onclick="chooseMC(5, 'D. =VLOOKUP(F4, I2:J5, 2)', this)">D. =VLOOKUP(F4, I2:J5, 2)</button>
+      </div>
+    </div>
+
+    <!-- ==================== 第二部分：拖拉填充題 (Q6 - Q10) ==================== -->
+    <div class="question-card" data-q="6">
+      <div class="q-title"><span>第 6 題・數學及取整函數定義</span><span class="badge badge-fill">拖拉填充</span></div>
+      <p>請將正確的函數名稱拖曳（或點選）填入對應的語意中：</p>
+      <div class="pool" id="pool-q6">
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c6-abs">ABS</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c6-int">INT</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c6-sqrt">SQRT</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c6-round">ROUND</span>
+      </div>
+      <div class="formula-line">1. 傳回數字的絕對值，去除負號：<span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="ABS"></span>(number)</div>
+      <div class="formula-line">2. 將數值向下捨入至最近整數：<span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="INT"></span>(number)</div>
+      <div class="formula-line">3. 傳回數值的平方根：<span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="SQRT"></span>(number)</div>
+      <div class="formula-line">4. 四捨五入至指定小數位數：<span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="ROUND"></span>(number, num_digits)</div>
+    </div>
+
+    <div class="question-card" data-q="7">
+      <div class="q-title"><span>第 7 題・文字截取函數運算結果</span><span class="badge badge-fill">拖拉填充</span></div>
+      <div class="context-box">以字串 <code>"Benedict"</code> 為例，配對下列各文字函數的傳回結果：</div>
+      <div class="pool" id="pool-q7">
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c7-8">8</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c7-ben">Ben</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c7-nedic">nedic</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c7-dict">dict</span>
+      </div>
+      <div class="formula-line">1. <code>=LEN("Benedict")</code> 傳回：<span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="8"></span></div>
+      <div class="formula-line">2. <code>=LEFT("Benedict", 3)</code> 傳回：<span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="Ben"></span></div>
+      <div class="formula-line">3. <code>=MID("Benedict", 3, 5)</code> 傳回：<span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="nedic"></span></div>
+      <div class="formula-line">4. <code>=RIGHT("Benedict", 4)</code> 傳回：<span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="dict"></span></div>
+    </div>
+
+    <div class="question-card" data-q="8">
+      <div class="q-title"><span>第 8 題・文字搜索函數 (FIND) 位置計算</span><span class="badge badge-fill">拖拉填充</span></div>
+      <div class="context-box">FIND 區分大小寫，傳回目標字符在字串中的起始位置。</div>
+      <div class="pool" id="pool-q8">
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c8-3">3</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c8-6">6</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c8-4">4</span>
+      </div>
+      <div class="formula-line">1. <code>=FIND("a", "Amanda")</code> 傳回第一個小寫 "a" 的位置：<span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="3"></span></div>
+      <div class="formula-line">2. <code>=FIND("a", "Amanda", 4)</code> 從第 4 個字符開始找，傳回：<span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="6"></span></div>
+      <div class="formula-line">3. <code>=FIND("ver", "universe")</code> 傳回子字串 "ver" 的起始位置：<span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="4"></span></div>
+    </div>
+
+    <div class="question-card" data-q="9">
+      <div class="q-title"><span>第 9 題・布爾邏輯運算 (AND / OR / NOT)</span><span class="badge badge-fill">拖拉填充</span></div>
+      <p>請將 <code>TRUE</code> 或 <code>FALSE</code> 拖入對應的運算式結果中：</p>
+      <div class="pool" id="pool-q9">
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c9-t1">TRUE</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c9-f1">FALSE</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c9-t2">TRUE</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c9-f2">FALSE</span>
+      </div>
+      <div class="formula-line">1. <code>=AND(1+1=2, 4+4>4)</code> 的結果為：<span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="TRUE"></span></div>
+      <div class="formula-line">2. <code>=AND(8-8<8, 1+1=3)</code> 的結果為：<span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="FALSE"></span></div>
+      <div class="formula-line">3. <code>=OR(1+1=2, 2+2=5)</code> 的結果為：<span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="TRUE"></span></div>
+      <div class="formula-line">4. <code>=NOT(1+1=2)</code> 的結果為：<span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="FALSE"></span></div>
+    </div>
+
+    <div class="question-card" data-q="10">
+      <div class="q-title"><span>第 10 題・乘數表混合儲存格參照鎖定</span><span class="badge badge-fill">拖拉填充</span></div>
+      <div class="context-box">
+        乘數表中，被乘數位於 <strong>A 欄</strong>（A2:A6），乘數位於 <strong>第 1 列</strong>（B1:F1）。<br>
+        要將儲存格 B2 的公式複製至整個區域。
+      </div>
+      <div class="pool" id="pool-q10">
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c10-a2">$A2</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c10-b1">B$1</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c10-2a">A$2</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c10-1b">$B1</span>
+      </div>
+      <div class="formula-line">
+        B2 公式：<code>=</code>
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="$A2"></span>
+        <code>*</code>
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="B$1"></span>
+      </div>
+    </div>
+
+    <!-- ==================== 第三部分：積木短答題 (Q11 - Q15) ==================== -->
+    <div class="question-card" data-q="11">
+      <div class="q-title"><span>第 11 題・XLOOKUP 語法積木排列</span><span class="badge badge-block">積木短答</span></div>
+      <div class="context-box">任務：在學號範圍 <code>B2:B7</code> 中查找學號 <code>22</code>，並傳回姓名欄 <code>C2:C7</code> 的學生名字。</div>
+      <p>請拖入積木組合出可執行的公式：</p>
+      <div class="pool" id="pool-q11">
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c11-1">=XLOOKUP(</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c11-2">22</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c11-3">, B2:B7</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c11-4">, C2:C7</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c11-5">)</span>
+      </div>
+      <div class="formula-line">
+        組裝槽：
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="=XLOOKUP("></span>
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="22"></span>
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target=", B2:B7"></span>
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target=", C2:C7"></span>
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target=")"></span>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="12">
+      <div class="q-title"><span>第 12 題・XLOOKUP 萬用字元配對模式</span><span class="badge badge-block">積木短答</span></div>
+      <div class="context-box">
+        要搜尋名字為四個字元且以「c」開頭的學生（<code>"c???"</code>），在開啟萬用字元搜尋時，<code>[match_mode]</code> 參數必須設定為多少？
+      </div>
+      <div class="pool" id="pool-q12">
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c12-0">0</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c12-1">1</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c12-2">2</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c12-m1">-1</span>
+      </div>
+      <div class="formula-line">
+        <code>=XLOOKUP("c???", C2:C7, C2:C7, , </code>
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="2"></span>
+        <code>)</code>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="13">
+      <div class="q-title"><span>第 13 題・COUNTIF 參照串連語法組裝</span><span class="badge badge-block">積木短答</span></div>
+      <div class="context-box">計算得分（<code>D2:D7</code>）大於或等於基準儲存格（<code>B9</code>）的學生數量。</div>
+      <div class="pool" id="pool-q13">
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c13-fn">=COUNTIF(</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c13-rng">D2:D7</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c13-op">, ">="&</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c13-ref">B9</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c13-end">)</span>
+      </div>
+      <div class="formula-line">
+        組裝槽：
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="=COUNTIF("></span>
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="D2:D7"></span>
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target=', ">="&'></span>
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="B9"></span>
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target=")"></span>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="14">
+      <div class="q-title"><span>第 14 題・巢狀條件判斷 (IF + OR)</span><span class="badge badge-block">積木短答</span></div>
+      <div class="context-box">若 Ben 的得分（<code>D2</code>）小於基準（<code>B9</code>）或 Benedict 的得分（<code>D5</code>）小於基準（<code>B9</code>），傳回 <code>"fail"</code>，否則傳回 <code>"pass"</code>。</div>
+      <div class="pool" id="pool-q14">
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c14-if">=IF(</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c14-or">OR(D2<B9, D5<B9)</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c14-fail">, "fail"</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c14-pass">, "pass"</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c14-end">)</span>
+      </div>
+      <div class="formula-line">
+        組裝槽：
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="=IF("></span>
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="OR(D2<B9, D5<B9)"></span>
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target=', "fail"'></span>
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target=', "pass"'></span>
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target=")"></span>
+      </div>
+    </div>
+
+    <div class="question-card" data-q="15">
+      <div class="q-title"><span>第 15 題・XLOOKUP 橫向資料陣列檢索</span><span class="badge badge-block">積木短答</span></div>
+      <div class="context-box">評級列為橫向 <code>G6:I6</code>（Rank A / B / C），獎品列為橫向 <code>G7:I7</code>（Book / Pen / Pencil）。找出評級為 <code>"Rank B"</code> 可得之獎品。</div>
+      <div class="pool" id="pool-q15">
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c15-fn">=XLOOKUP(</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c15-val">"Rank B"</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c15-lk">, G6:I6</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c15-ret">, G7:I7</span>
+        <span class="chip" draggable="true" ondragstart="drag(event)" id="c15-end">)</span>
+      </div>
+      <div class="formula-line">
+        組裝槽：
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target="=XLOOKUP("></span>
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target='"Rank B"'></span>
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target=", G6:I6"></span>
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target=", G7:I7"></span>
+        <span class="drop-slot" ondragover="allowDrop(event)" ondrop="drop(event)" onclick="slotClick(this)" data-target=")"></span>
+      </div>
+    </div>
+
+    <!-- ==================== 第四部分：公式手動輸入題 (Q16 - Q20) ==================== -->
+    <div class="question-card" data-q="16">
+      <div class="q-title"><span>第 16 題・條件加總 (SUMIF)</span><span class="badge badge-typing">公式手打</span></div>
+      <div class="context-box">
+        任務：計算所有 <strong>1A 班學生</strong> 的得分總和。<br>
+        • 班別範圍：A2:A7<br>
+        • 準則條件：1A<br>
+        • 得分加總範圍：D2:D7
+      </div>
+      <label for="input-q16">請在此手動輸入完整的 Excel 公式：</label>
+      <input type="text" class="formula-input" id="input-q16" placeholder="請在此輸入公式，以等號 = 開頭">
+    </div>
+
+    <div class="question-card" data-q="17">
+      <div class="q-title"><span>第 17 題・條件加總與儲存格參照串連</span><span class="badge badge-typing">公式手打</span></div>
+      <div class="context-box">
+        任務：計算得分（D2:D7）中，<strong>得分大於基準儲存格（B9）</strong>之分數總和。<br>
+        • 條件範圍及加總範圍均為 D2:D7<br>
+        • 準則需將比較運算符與儲存格 B9 進行串連
+      </div>
+      <label for="input-q17">請在此手動輸入完整的 Excel 公式：</label>
+      <input type="text" class="formula-input" id="input-q17" placeholder="請在此輸入公式，以等號 = 開頭">
+    </div>
+
+    <div class="question-card" data-q="18">
+      <div class="q-title"><span>第 18 題・條件計數 (COUNTIF)</span><span class="badge badge-typing">公式手打</span></div>
+      <div class="context-box">
+        任務：統計得分欄（D2:D7）中，<strong>得分嚴格小於基準儲存格（B9）</strong>之學生人數。
+      </div>
+      <label for="input-q18">請在此手動輸入完整的 Excel 公式：</label>
+      <input type="text" class="formula-input" id="input-q18" placeholder="請在此輸入公式，以等號 = 開頭">
+    </div>
+
+    <div class="question-card" data-q="19">
+      <div class="q-title"><span>第 19 題・邏輯判斷 (IF)</span><span class="badge badge-typing">公式手打</span></div>
+      <div class="context-box">
+        任務：比較儲存格得分。若 Ada 的得分（D3）大於 Ben 的得分（D2），則顯示文字 <code>Ada won</code>，否則顯示文字 <code>Ada not won</code>。
+      </div>
+      <label for="input-q19">請在此手動輸入完整的 Excel 公式：</label>
+      <input type="text" class="formula-input" id="input-q19" placeholder="請在此輸入公式，以等號 = 開頭">
+    </div>
+
+    <div class="question-card" data-q="20">
+      <div class="q-title"><span>第 20 題・查閱函數 (XLOOKUP) 反向搜尋</span><span class="badge badge-typing">公式手打</span></div>
+      <div class="context-box">
+        任務：在姓名欄（C2:C7）中查找名字為 <code>Ben</code> 的學生，並傳回其在班別欄（A2:A7）的班別。
+      </div>
+      <label for="input-q20">請在此手動輸入完整的 Excel 公式：</label>
+      <input type="text" class="formula-input" id="input-q20" placeholder="請在此輸入公式，以等號 = 開頭">
+    </div>
+
+    <button class="btn" onclick="submitExam()">完成並提交全卷評分 🏁</button>
+  </div>
+
+  <!-- 頁面 3: 成績報告單與 PDF 匯出 -->
+  <div id="report-section">
+    <h1>🎓 Excel 試算表單元能力評估報告</h1>
+    
+    <div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--primary); padding-bottom:10px; margin-top:20px;">
+      <div><strong>班別：</strong><span id="rep-class"></span></div>
+      <div><strong>學號：</strong><span id="rep-num"></span></div>
+      <div><strong>姓名：</strong><span id="rep-name"></span></div>
+      <div><strong>作答用時：</strong><span id="rep-duration"></span></div>
+    </div>
+
+    <div class="score-banner">
+      <p style="margin:0; font-size:16px;">測驗總得分 (Score)</p>
+      <h2 id="rep-score">0 / 100</h2>
+      <p id="rep-feedback" style="margin:8px 0 0; font-weight:600;"></p>
+    </div>
+
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th style="width: 6%;">題號</th>
+          <th style="width: 22%;">考核知識點</th>
+          <th style="width: 10%;">題型</th>
+          <th style="width: 25%;">同學作答 (Your Answer)</th>
+          <th style="width: 10%;">結果</th>
+          <th style="width: 27%;">標準答案 / 語法解析</th>
+        </tr>
+      </thead>
+      <tbody id="report-details">
+        <!-- 動態渲染各題作答詳情 -->
+      </tbody>
+    </table>
+
+    <div style="margin-top:25px; text-align:center;" class="btn-no-print">
+      <button class="btn" style="background:var(--accent); margin-bottom:10px;" onclick="window.print()">🖨️ 列印 / 儲存為 PDF 報告單</button>
+      <button class="btn" style="background:#64748b;" onclick="location.reload()">🔄 重新測驗</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let mcAnswers = { q1: null, q2: null, q3: null, q4: null, q5: null };
+  let studentInfo = { class: '', num: '', name: '' };
+  let timerInterval = null;
+  let secondsRemaining = 20 * 60; // 20 分鐘計時
+
+  function startQuiz() {
+    const cls = document.getElementById('student-class').value.trim();
+    const num = document.getElementById('student-num').value.trim();
+    const name = document.getElementById('student-name').value.trim();
+
+    if(!cls || !num || !name) {
+      alert('請先填妥班別、學號及姓名！');
+      return;
+    }
+    studentInfo = { class: cls, num: num, name: name };
+    document.getElementById('start-section').style.display = 'none';
+    document.getElementById('exam-section').style.display = 'block';
+
+    timerInterval = setInterval(() => {
+      secondsRemaining--;
+      const mins = Math.floor(secondsRemaining / 60);
+      const secs = secondsRemaining % 60;
+      document.getElementById('timer').innerText = `⏱️ 剩餘時間：${mins}:${secs < 10 ? '0' : ''}${secs}`;
+      if(secondsRemaining <= 0) {
+        clearInterval(timerInterval);
+        alert('時間結束，系統將自動交卷！');
+        submitExam();
+      }
+    }, 1000);
+  }
+
+  function chooseMC(qNum, fullText, btn) {
+    mcAnswers['q' + qNum] = fullText;
+    btn.parentElement.querySelectorAll('.mc-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+
+  function allowDrop(ev) { ev.preventDefault(); }
+  function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+  function drop(ev) {
+    ev.preventDefault();
+    const data = ev.dataTransfer.getData("text");
+    const draggedEl = document.getElementById(data);
+    placeChip(draggedEl, ev.currentTarget);
+  }
+
+  let activeChip = null;
+  document.addEventListener('click', function(e) {
+    if(e.target.classList.contains('chip')) {
+      if(activeChip) activeChip.style.outline = 'none';
+      activeChip = e.target;
+      activeChip.style.outline = '3px solid var(--accent)';
+    }
+  });
+
+  function slotClick(slot) {
+    if(activeChip) {
+      placeChip(activeChip, slot);
+      activeChip.style.outline = 'none';
+      activeChip = null;
+    } else if(slot.children.length > 0) {
+      const chip = slot.children[0];
+      slot.closest('.question-card').querySelector('.pool').appendChild(chip);
+      slot.classList.remove('filled');
+    }
+  }
+
+  function placeChip(chip, slot) {
+    if(slot.children.length > 0) {
+      const oldChip = slot.children[0];
+      chip.parentElement.appendChild(oldChip);
+    }
+    slot.appendChild(chip);
+    slot.classList.add('filled');
+  }
+
+  // 核心：大小寫徹底不敏感 + 智慧符號空格清理函數
+  function normalizeFormula(str) {
+    if(!str) return '';
+    let s = str.trim();
+    // 轉換中文全形引號與單引號為標準雙引號
+    s = s.replace(/[“”‘’']/g, '"');
+    // 轉換中文全形逗點、括號、等號
+    s = s.replace(/，/g, ',').replace(/（/g, '(').replace(/）/g, ')').replace(/＝/g, '=');
+    // 自動修補同學未輸入的等號開頭
+    if(!s.startsWith('=')) {
+      s = '=' + s;
+    }
+    // 消除運算符與標點周邊的多餘空格: = ( ) , : & > < + - * /
+    s = s.replace(/\s*([=(),:&><+\-*/])\s*/g, '$1');
+    // 壓縮字串內容內部多餘的連續空格為單一空格
+    s = s.replace(/\s+/g, ' ');
+    // 全部強制轉為小寫，徹底消除大小寫差異（Excel 原生公式運算邏輯）
+    return s.toLowerCase();
+  }
+
+  function submitExam() {
+    clearInterval(timerInterval);
+    let totalScore = 0;
+    const details = [];
+
+    // 1. 選擇題評判 (Q1 - Q5)[cite: 16, 18, 31, 45, 57]
+    const mcKeys = [
+      { q: 1, key: 'B', concept: '保留前置 0 儲存格格式', exp: 'B. 文字 (Text) 格式' },
+      { q: 2, key: 'C', concept: '捲動時固定標題/首欄', exp: 'C. 凍結窗格（凍結第一欄）' },
+      { q: 3, key: 'C', concept: '樞紐分析表用途', exp: 'C. 匯總及比較不同類型書籍的銷售情況' },
+      { q: 4, key: 'C', concept: '0 到 5 隨機整數產生', exp: 'C. =INT(RAND() * 6)' },
+      { q: 5, key: 'A', concept: '絕對參照複製變化', exp: 'A. =VLOOKUP(F4, $I$2:$J$5, 2)' }
+    ];
+
+    mcKeys.forEach(item => {
+      const userChoice = mcAnswers['q' + item.q];
+      const isCorrect = userChoice && userChoice.startsWith(item.key);
+      if(isCorrect) totalScore += 5;
+      details.push({
+        id: 'Q' + item.q,
+        concept: item.concept,
+        type: '選擇題',
+        userAns: userChoice || '<span class="user-ans-empty">(未選擇)</span>',
+        pass: isCorrect,
+        score: isCorrect ? 5 : 0,
+        exp: item.exp
+      });
+    });
+
+    // 2. 拖拉填充題評判 (Q6 - Q10)[cite: 1, 2, 3, 26, 48]
+    function evalDragSlots(qNum, countExpected, concept, expText, isJoined = false) {
+      const slots = document.querySelectorAll(`[data-q="${qNum}"] .drop-slot`);
+      let correctCount = 0;
+      let slotTexts = [];
+      slots.forEach(s => {
+        const text = s.innerText.trim();
+        slotTexts.push(text || '___');
+        const target = s.dataset.target.trim();
+        if(text === target) correctCount++;
+      });
+
+      const pass = correctCount === countExpected;
+      if(pass) totalScore += 5;
+      const userDisplay = isJoined ? slotTexts.join(' ') : slotTexts.map((t, idx) => `(${idx+1}) ${t}`).join('; ');
+      
+      details.push({
+        id: 'Q' + qNum,
+        concept,
+        type: '拖拉填充',
+        userAns: userDisplay.includes('___') && userDisplay.replace(/[();0-9_ ]/g, '') === '' ? '<span class="user-ans-empty">(未完成)</span>' : userDisplay,
+        pass,
+        score: pass ? 5 : 0,
+        exp: expText
+      });
+    }
+
+    evalDragSlots(6, 4, '數學與捨入函數定義', 'ABS, INT, SQRT, ROUND');
+    evalDragSlots(7, 4, '文字截取函數運算', 'LEN=8, LEFT=Ben, MID=nedic, RIGHT=dict');
+    evalDragSlots(8, 3, 'FIND 字符位置搜尋', 'FIND("a")=3, FIND("a",...,4)=6, FIND("ver")=4');
+    evalDragSlots(9, 4, '邏輯運算 (AND/OR/NOT)', 'TRUE, FALSE, TRUE, FALSE');
+    evalDragSlots(10, 2, '乘數表混合參照鎖定', '=$A2 * B$1', true);
+
+    // 3. 積木短答題評判 (Q11 - Q15)[cite: 2, 3, 4, 6]
+    function evalBlockSlots(qNum, countExpected, concept, expText) {
+      const slots = document.querySelectorAll(`[data-q="${qNum}"] .drop-slot`);
+      let correctCount = 0;
+      let blockTexts = [];
+      slots.forEach(s => {
+        const text = s.innerText.trim();
+        blockTexts.push(text || '[空]');
+        const target = s.dataset.target.trim();
+        if(text === target) correctCount++;
+      });
+
+      const pass = correctCount === countExpected;
+      if(pass) totalScore += 5;
+      const assembled = blockTexts.join(' ');
+      
+      details.push({
+        id: 'Q' + qNum,
+        concept,
+        type: '積木短答',
+        userAns: assembled.replace(/\[空\]| /g, '') === '' ? '<span class="user-ans-empty">(未拼裝)</span>' : assembled,
+        pass,
+        score: pass ? 5 : 0,
+        exp: expText
+      });
+    }
+
+    evalBlockSlots(11, 5, 'XLOOKUP 基礎查閱語法', '=XLOOKUP(22, B2:B7, C2:C7)');
+    evalBlockSlots(12, 1, 'XLOOKUP 萬用字元配對模式', '配對模式應為 2');
+    evalBlockSlots(13, 5, 'COUNTIF 串連比較運算符', '=COUNTIF(D2:D7, ">="&B9)');
+    evalBlockSlots(14, 5, '巢狀邏輯 (IF + OR)', '=IF(OR(D2<B9, D5<B9), "fail", "pass")');
+    evalBlockSlots(15, 5, 'XLOOKUP 橫向搜尋陣列', '=XLOOKUP("Rank B", G6:I6, G7:I7)');
+
+    // 4. 公式手動輸入題評判 (Q16 - Q20，大小寫完全不敏感)[cite: 1, 2, 3, 4]
+    function evalManualFormula(qNum, validList, concept, expText) {
+      const rawInput = document.getElementById('input-q' + qNum).value;
+      const cleanedInput = normalizeFormula(rawInput);
+      const pass = validList.includes(cleanedInput);
+      if(pass) totalScore += 5;
+
+      details.push({
+        id: 'Q' + qNum,
+        concept,
+        type: '公式手打',
+        userAns: rawInput.trim() ? `<span class="user-ans-text">${rawInput.trim()}</span>` : '<span class="user-ans-empty">(未填寫)</span>',
+        pass,
+        score: pass ? 5 : 0,
+        exp: expText
+      });
+    }
+
+    // 預先對標準答案群組做小寫與格式正規化處理
+    evalManualFormula(16, [
+      normalizeFormula('=SUMIF(A2:A7, "1A", D2:D7)'),
+      normalizeFormula('=SUMIF(A2:A7, "=1A", D2:D7)'),
+      normalizeFormula('=SUMIF(A:A, "1A", D:D)')
+    ], 'SUMIF 條件加總', '=SUMIF(A2:A7, "1A", D2:D7)');
+
+    evalManualFormula(17, [
+      normalizeFormula('=SUMIF(D2:D7, ">"&B9, D2:D7)'),
+      normalizeFormula('=SUMIF(D:D, ">"&B9, D:D)')
+    ], 'SUMIF 參照串連加總', '=SUMIF(D2:D7, ">"&B9, D2:D7)');
+
+    evalManualFormula(18, [
+      normalizeFormula('=COUNTIF(D2:D7, "<"&B9)'),
+      normalizeFormula('=COUNTIF(D:D, "<"&B9)')
+    ], 'COUNTIF 條件計數', '=COUNTIF(D2:D7, "<"&B9)');
+
+    evalManualFormula(19, [
+      normalizeFormula('=IF(D3>D2, "Ada won", "Ada not won")'),
+      normalizeFormula('=IF(D2<D3, "Ada won", "Ada not won")')
+    ], 'IF 比較判斷', '=IF(D3>D2, "Ada won", "Ada not won")');
+
+    evalManualFormula(20, [
+      normalizeFormula('=XLOOKUP("Ben", C2:C7, A2:A7)'),
+      normalizeFormula('=XLOOKUP("Ben", C:C, A:A)')
+    ], 'XLOOKUP 反向查閱', '=XLOOKUP("Ben", C2:C7, A2:A7)');
+
+    // 渲染報告
+    document.getElementById('exam-section').style.display = 'none';
+    document.getElementById('report-section').style.display = 'block';
+
+    const spent = (20 * 60) - secondsRemaining;
+    const m = Math.floor(spent / 60);
+    const s = spent % 60;
+
+    document.getElementById('rep-class').innerText = studentInfo.class;
+    document.getElementById('rep-num').innerText = studentInfo.num;
+    document.getElementById('rep-name').innerText = studentInfo.name;
+    document.getElementById('rep-duration').innerText = `${m} 分 ${s} 秒`;
+    document.getElementById('rep-score').innerText = `${totalScore} / 100`;
+
+    const feedback = document.getElementById('rep-feedback');
+    if(totalScore >= 90) feedback.innerText = '🌟 卓越表現！徹底掌握試算表公式語法與儲存格參照！';
+    else if(totalScore >= 70) feedback.innerText = '👍 成績良好！請仔細複習答錯題目的標準引數順序與參照鎖定。';
+    else feedback.innerText = '💡 仍有進步空間！建議重新溫習「混合參照 ($)」及「XLOOKUP」相關概念。';
+
+    const tbody = document.getElementById('report-details');
+    tbody.innerHTML = '';
+    details.forEach(item => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong>${item.id}</strong></td>
+        <td>${item.concept}</td>
+        <td>${item.type}</td>
+        <td>${item.userAns}</td>
+        <td style="color:${item.pass ? 'var(--success)' : 'var(--error)'}; font-weight:bold;">
+          ${item.pass ? '✓ 正確 (+5)' : '✗ 錯誤 (+0)'}
+        </td>
+        <td style="font-family:monospace; font-size:12.5px;">${item.exp}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+</script>
+
+</body>
+</html>
